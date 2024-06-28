@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -87,17 +88,16 @@ type FileInfo struct {
 func walkDir(dirPath string) ([]FileInfo, error) {
 	fmt.Printf("请求路径: %s \n", dirPath)
 	var infos []FileInfo
-	items, err := os.ReadDir(dirPath)
+	items, err := ioutil.ReadDir(dirPath)
 	if err != nil {
 		return nil, err
 	}
 	for _, item := range items {
-		info, _ := item.Info()
 		infos = append(infos, FileInfo{
 			Name:    item.Name(),
 			IsDir:   item.IsDir(),
-			Size:    info.Size(),
-			ModTime: info.ModTime(),
+			Size:    item.Size(),
+			ModTime: item.ModTime(),
 		})
 	}
 	return infos, nil
