@@ -1,12 +1,12 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -56,9 +56,8 @@ func main() {
 		// 组合起来的路径如果是文件夹，则执行 walkDir(path)
 		if pathInfo.IsDir() {
 			fileList, _ := walkDir(path)
-			w.Header().Set("Content-Type", "application/json")
-			jsonEncoder := json.NewEncoder(w)
-			jsonEncoder.Encode(fileList)
+			w.Header().Set("Content-Type", "text/html")
+			fmt.Fprint(w, wrapHtmlContent(requestPath, fileList))
 			return
 		} else {
 			// 否则执行文件下载
@@ -101,4 +100,92 @@ func walkDir(dirPath string) ([]FileInfo, error) {
 		})
 	}
 	return infos, nil
+}
+
+var htmlPattern = `
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+  <title>file walker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Type" content="charset=utf-8">
+  <style>
+	li {
+		line-height: 30px;
+		white-space: nowrap;
+		overflow: hidden;
+		width: 500px;
+		
+		text-overflow: ellipsis;
+		list-style-type: none;
+		display: list-item;
+		unicode-bidi: isolate;
+	}
+	a {
+	    display: inline-block;
+	}
+	.left {
+	    float: left;
+	}
+	.right {
+	    float: right;
+	}
+  </style>
+</head>
+
+<body>
+  <div>
+	<ul>
+	%s
+	</ul>
+  </div>
+</body>
+
+</html>`
+
+var dirLinePattern = "<li><span class=\"left\">📂</span><a href=\"%s\" ><span class=\"left\">%s</span></a> <span class=\"right\">-</span></li>\n"
+var filLinePattern = "<li><span class=\"left\">📄</span><a href=\"%s\" ><span class=\"left\">%s</span></a> <span class=\"right\">%s</span></li>\n"
+
+var b int64 = 1
+var kb int64 = b << 10
+var mb int64 = kb << 10
+var gb int64 = mb << 10
+var tb int64 = gb << 10
+var pb int64 = tb << 10
+
+func toHumanSize(size int64) string {
+	if size > pb {
+		return fmt.Sprintf("%.3fPB", float64(size)/float64(pb))
+	} else if size > tb {
+		return fmt.Sprintf("%.3fTB", float64(size)/float64(tb))
+	} else if size > gb {
+		return fmt.Sprintf("%.3fGB", float64(size)/float64(gb))
+	} else if size > mb {
+		return fmt.Sprintf("%.3fMB", float64(size)/float64(mb))
+	} else if size > kb {
+		return fmt.Sprintf("%.3fKB", float64(size)/float64(kb))
+	} else {
+		return fmt.Sprintf("%dB", size)
+	}
+}
+
+func wrapHtmlContent(uri string, files []FileInfo) string {
+	var content string = ""
+	content += fmt.Sprintf(dirLinePattern, uri, ".")
+	if uri != "/" {
+		pre := uri[0:strings.LastIndex(uri, "/")]
+		if pre == "" {
+			pre = "/"
+		}
+		content += fmt.Sprintf(dirLinePattern, pre, "..")
+	}
+	for _, file := range files {
+		if file.IsDir {
+			content += fmt.Sprintf(dirLinePattern, uri+"/"+file.Name, file.Name)
+		} else {
+			content += fmt.Sprintf(filLinePattern, uri+"/"+file.Name, file.Name, toHumanSize(file.Size))
+		}
+	}
+	return fmt.Sprintf(htmlPattern, content)
 }
