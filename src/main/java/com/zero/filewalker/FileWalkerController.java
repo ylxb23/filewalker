@@ -38,21 +38,22 @@ public class FileWalkerController {
         String path = getRootPath() + uri;
         // 判断路径是否存在
         File curr = new File(path);
-        if(!curr.exists()) {
+        if (!curr.exists()) {
             System.out.println("请求的路径不存在为：" + path);
             response.setStatus(HttpStatus.BAD_REQUEST.value());
             return ResponseEntity.badRequest().body("请求的路径[" + uri + "]不存在");
         }
-        if(curr.isDirectory()) {
+        if (curr.isDirectory()) {
             // 返回 html
             response.setContentType("text/html");
             return ResponseEntity.ok(wrapHtmlContent(uri, listFileOfPath(path)));
-//            return ResponseEntity.ok(listFileOfPath(path));
+            // return ResponseEntity.ok(listFileOfPath(path));
         } else {
             response.setContentType("application/octet-stream");
-            response.setHeader("Content-Disposition", "attachment; filename=\"" + URLEncoder.encode(curr.getName(), CHARACTER_SET) + "\"");
-            try(FileInputStream fis = new FileInputStream(curr);
-                OutputStream os = response.getOutputStream()) {
+            response.setHeader("Content-Disposition",
+                    "attachment; filename=\"" + URLEncoder.encode(curr.getName(), CHARACTER_SET) + "\"");
+            try (FileInputStream fis = new FileInputStream(curr);
+                    OutputStream os = response.getOutputStream()) {
                 byte[] buffer = new byte[1024];
                 int bytesRead;
                 while ((bytesRead = fis.read(buffer)) != -1) {
@@ -70,15 +71,15 @@ public class FileWalkerController {
 
     private String wrapHtmlContent(String path, List<FileInfo> fileInfos) {
         StringBuilder sb = new StringBuilder();
-        sb.append(String.format(DIR_LINE_PATTERN, path, "."));  // .
-        if("/".equals(path)) {
+        sb.append(String.format(DIR_LINE_PATTERN, path, ".")); // .
+        if ("/".equals(path)) {
             path = "";
         } else {
             String pre = path.substring(0, path.lastIndexOf("/"));
             sb.append(String.format(DIR_LINE_PATTERN, pre.isEmpty() ? "/" : pre, "..")); // ..
         }
-        for(FileInfo i : fileInfos) {
-            if(i.isDir) {
+        for (FileInfo i : fileInfos) {
+            if (i.isDir) {
                 sb.append(String.format(DIR_LINE_PATTERN, path + "/" + i.name, i.name));
             } else {
                 sb.append(String.format(FIL_LINE_PATTERN, path + "/" + i.name, i.name, toHumanSize(i.size)));
@@ -87,35 +88,37 @@ public class FileWalkerController {
         return String.format(HTML_PATTERN, sb);
     }
 
-    static final long B  = 1;
+    static final long B = 1;
     static final long KB = 1 << 10;
     static final long MB = KB << 10;
     static final long GB = MB << 10;
     static final long TB = GB << 10;
     static final long PB = TB << 10;
+
     private static String toHumanSize(long size) {
-        if(size > PB) {
+        if (size > PB) {
             return String.format("%.3fPB", (double) (size >> 40) / 1024);
-        } else if(size > TB) {
+        } else if (size > TB) {
             return String.format("%.3fTB", (double) (size >> 30) / 1024);
-        } else if(size > GB) {
+        } else if (size > GB) {
             return String.format("%.3fGB", (double) (size >> 20) / 1024);
-        } else if(size > MB) {
+        } else if (size > MB) {
             return String.format("%.3fMB", (double) (size >> 10) / 1024);
-        } else if(size > KB) {
+        } else if (size > KB) {
             return String.format("%.3fKB", (double) size / 1024);
         } else {
             return String.format("%dB", size);
         }
     }
 
-
-
     static class FileInfo implements Serializable {
         String name;
         boolean isDir;
         long size;
-        public FileInfo() {}
+
+        public FileInfo() {
+        }
+
         public FileInfo(String n, boolean dir, long s) {
             this.name = n;
             this.isDir = dir;
@@ -153,7 +156,8 @@ public class FileWalkerController {
             Path directoryPath = Paths.get(path);
             try (DirectoryStream<Path> stream = Files.newDirectoryStream(directoryPath)) {
                 for (Path file : stream) {
-                    list.add(new FileInfo(file.getFileName().toString(), file.toFile().isDirectory(), file.toFile().length()));
+                    list.add(new FileInfo(file.getFileName().toString(), file.toFile().isDirectory(),
+                            file.toFile().length()));
                 }
                 return list;
             } catch (IOException e) {
@@ -165,20 +169,18 @@ public class FileWalkerController {
         return new ArrayList<>();
     }
 
-
     public String getRootPath() {
-        if(App.ROOT.endsWith(File.pathSeparator)) {
+        if (App.ROOT.endsWith(File.pathSeparator)) {
             return App.ROOT.substring(0, App.ROOT.length() - 1);
         }
         return App.ROOT;
     }
 
-
     static final String HTML_PATTERN = "<!DOCTYPE html>\n" +
             "<html lang=\"zh\">\n" +
             "\n" +
             "<head>\n" +
-            "  <title>DEMO</title>\n" +
+            "  <title>file walker</title>\n" +
             "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n" +
             "  <meta http-equiv=\"Content-Type\" content=\"charset=utf-8\">\n" +
             "  <style>\n" +
@@ -208,7 +210,7 @@ public class FileWalkerController {
             "<body>\n" +
             "  <div>\n" +
             "\t<ul>\n" +
-            "%s" +          // 文件列表
+            "%s" + // 文件列表
             "\t</ul>\n" +
             "  </div>\n" +
             "</body>\n" +
