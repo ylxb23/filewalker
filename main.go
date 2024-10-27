@@ -179,6 +179,8 @@ func wrapHtmlContent(uri string, files []FileInfo) string {
 			pre = "/"
 		}
 		content += fmt.Sprintf(dirLinePattern, pre, "..")
+	} else {
+		uri = ""
 	}
 	for _, file := range files {
 		if file.IsDir {
