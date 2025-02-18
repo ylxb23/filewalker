@@ -3,9 +3,11 @@ package com.zero.filewalker;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
 
 import java.io.File;
+import java.util.Arrays;
 
 /**
  * @author zero
@@ -29,7 +31,8 @@ public class App {
             System.exit(1);
         }
         ROOT = rootPath;
-        SpringApplication.run(App.class);
+        ConfigurableApplicationContext context = SpringApplication.run(App.class);
+        System.out.println("beans: " + Arrays.toString(context.getBeanDefinitionNames()));
         System.out.println("根路径为：" + rootPath);
     }
 }

@@ -25,11 +25,12 @@ import java.util.List;
  * @since 2024/7/2 11:37
  */
 @RestController
+@RequestMapping(path = "/**")
 public class FileWalkerController {
 
     static final String CHARACTER_SET = "UTF-8";
 
-    @RequestMapping(path = "/**", method = RequestMethod.GET)
+    @RequestMapping(method = RequestMethod.GET)
     public ResponseEntity<?> walk(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String uri = request.getRequestURI();
         uri = URLDecoder.decode(uri, CHARACTER_SET);
