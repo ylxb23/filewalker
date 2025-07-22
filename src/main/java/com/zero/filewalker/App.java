@@ -21,7 +21,7 @@ public class App {
 
     public static void main(String[] args) {
         if (args.length < 1) {
-            System.err.println("Usage: java -jar fileWalker.jar -Droot.path=<绝对路径> ");
+            System.err.println("Usage: java -jar fileWalker.jar <绝对路径> ");
             System.exit(1);
         }
         String rootPath = args[0];

@@ -18,7 +18,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  * @author zero
@@ -34,6 +37,7 @@ public class FileWalkerController {
     public ResponseEntity<?> walk(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String uri = request.getRequestURI();
         uri = URLDecoder.decode(uri, CHARACTER_SET);
+        String sort = request.getParameter("sort");
         System.out.println("请求路径：" + uri);
         // 组合路径
         String path = getRootPath() + uri;
@@ -44,10 +48,12 @@ public class FileWalkerController {
             response.setStatus(HttpStatus.BAD_REQUEST.value());
             return ResponseEntity.badRequest().body("请求的路径[" + uri + "]不存在");
         }
+        path = curr.getAbsolutePath();
+        System.out.println("请求本地路径：" + uri);
         if (curr.isDirectory()) {
             // 返回 html
             response.setContentType("text/html");
-            return ResponseEntity.ok(wrapHtmlContent(uri, listFileOfPath(path)));
+            return ResponseEntity.ok(wrapHtmlContent(uri, listFileOfPath(path, sort)));
             // return ResponseEntity.ok(listFileOfPath(path));
         } else {
             response.setContentType("application/octet-stream");
@@ -151,7 +157,7 @@ public class FileWalkerController {
         }
     }
 
-    private List<FileInfo> listFileOfPath(String path) {
+    private List<FileInfo> listFileOfPath(String path, String sort) {
         try {
             List<FileInfo> list = new ArrayList<>();
             Path directoryPath = Paths.get(path);
@@ -160,6 +166,15 @@ public class FileWalkerController {
                     list.add(new FileInfo(file.getFileName().toString(), file.toFile().isDirectory(),
                             file.toFile().length()));
                 }
+                // 文件夹按名称排序放前面，文件按大小倒序放后面
+                List<FileInfo> dirs = list.stream().filter(FileInfo::isDir).sorted(Comparator.comparing(FileInfo::getName)).collect(Collectors.toList());
+                Comparator<FileInfo> c = Comparator.comparing(FileInfo::getName);
+                if("size".equalsIgnoreCase(sort)) {
+                    c = Comparator.comparing(FileInfo::getSize).reversed();
+                }
+                List<FileInfo> files = list.stream().filter(Predicate.not(FileInfo::isDir)).sorted(c).toList();
+                dirs.addAll(files);
+                list = dirs;
                 return list;
             } catch (IOException e) {
                 System.err.println("An error occurred while listing files: " + e.getMessage());
@@ -189,7 +204,8 @@ public class FileWalkerController {
             "\t\tline-height: 30px;\n" +
             "\t\twhite-space: nowrap;\n" +
             "\t\toverflow: hidden;\n" +
-            "\t\twidth: 500px;\n" +
+            "\t\twidth: 100%%;\n" +
+            "\t\tmin-width: 500px;\n" +
             "\t\t\n" +
             "\t\ttext-overflow: ellipsis;\n" +
             "\t\tlist-style-type: none;\n" +
