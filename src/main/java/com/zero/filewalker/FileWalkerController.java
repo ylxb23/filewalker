@@ -167,8 +167,8 @@ public class FileWalkerController {
                             file.toFile().length()));
                 }
                 // 文件夹按名称排序放前面，文件按大小倒序放后面
-                List<FileInfo> dirs = list.stream().filter(FileInfo::isDir).sorted(Comparator.comparing(FileInfo::getName)).collect(Collectors.toList());
-                Comparator<FileInfo> c = Comparator.comparing(FileInfo::getName);
+                List<FileInfo> dirs = list.stream().filter(FileInfo::isDir).sorted(Comparator.comparing(fi -> fi.getName() != null ? fi.getName().toUpperCase():fi.getName())).collect(Collectors.toList());
+                Comparator<FileInfo> c = Comparator.comparing(fi -> fi.getName() != null ? fi.getName().toUpperCase():fi.getName());
                 if("size".equalsIgnoreCase(sort)) {
                     c = Comparator.comparing(FileInfo::getSize).reversed();
                 }

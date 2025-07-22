@@ -1,6 +1,6 @@
 # Usage
 ```bash
-$ java -jar target/filewalker.jar -Droot.path=<absolute path>
+$ java -jar target/filewalker.jar <absolute path>
 ```
 
 # Preview
